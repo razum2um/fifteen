@@ -31,7 +31,8 @@
       (can? to-left) (update-to to-left)
       (can? to-right) (update-to to-right)
       (can? to-up) (update-to to-up)
-      (can? to-down) (update-to to-down))))
+      (can? to-down) (update-to to-down)
+      :else game)))
 
 ;; prediction
 
