@@ -50,6 +50,10 @@
           (if x (recur more (+ acc (forward-less x more)))
               acc))))
 
+(defn solved? [game]
+  (let [game* (remove #{::nil} (flatten game))]
+    (= (sort game*) game*)))
+
 ;; actions
 
 (defn redraw [moving-idxs]
@@ -69,6 +73,8 @@
 (defn squares [game]
   [:div
    [:h1 (if (-> game ->snake solvable?) "Solvable" "Not solvable")]
+   (if (-> game solved?)
+     [:h2 "Solved!"])
    (for [[group-idx group] (map-indexed vector game)]
      ^{:key group-idx} [:div.group
       (for [[idx x] (map-indexed vector group)]
