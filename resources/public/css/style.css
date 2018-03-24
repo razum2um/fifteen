@@ -1,0 +1,16 @@
+/* some style */
+
+.group {
+	display: flex;
+	flex-direction: row;
+}
+.square {
+	padding: 15px;
+	margin: 5px;
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	background-color: lightblue;
+	vertical-align: middle;
+	text-align: center;
+}
