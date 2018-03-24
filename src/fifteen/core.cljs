@@ -16,7 +16,7 @@
 
 (defn show-solvable []
   (loop [game (game/gen-game)]
-    (if (solvable? game)
+    (if (game/solvable? game)
       (swap! app-state assoc-in [:game] game)
       (recur (game/gen-game)))))
 
@@ -24,8 +24,8 @@
 
 (defn squares [game]
   [:div
-   [:h1 (if (solvable? game) "Solvable" "Not solvable")]
-   (if (solved? game) [:h2 "Solved!"])
+   [:h1 (if (game/solvable? game) "Solvable" "Not solvable")]
+   (if (game/solved? game) [:h2 "Solved!"])
    (for [[group-idx group] (map-indexed vector game)]
      ^{:key group-idx} [:div.group
       (for [[idx x] (map-indexed vector group)]
