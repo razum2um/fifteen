@@ -71,7 +71,7 @@
    (for [[group-idx group] (map-indexed vector game)]
      ^{:key group-idx} [:div.group
       (for [[idx x] (map-indexed vector group)]
-        ^{:key idx} [:div.square {:on-click #(redraw [group-idx idx])} x])])])
+        ^{:key idx} [:div.square {:on-click #(redraw [group-idx idx])} (when-not (= ::nil x) x)])])])
 
 (defn app []
   [:div
