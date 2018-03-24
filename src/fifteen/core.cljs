@@ -3,52 +3,49 @@
 
 (enable-console-print!)
 
-;; define your app data so that it doesn't get over-written on reload
-
 (def app-state (atom {:game (mapv vec (partition 4 (shuffle (cons ::nil (range 1 16)))))}))
 (defn l [x] (println x) x)
 
-(defn update-game [state pos1 val1 pos2 val2]
-  (update-in state [:game]
-             (fn [game] (-> game
-                            (assoc-in pos1 val1)
-                            (assoc-in pos2 val2)
-                            l))))
+(defn update-game [game pos2 val1 pos1]
+  (-> game
+      (assoc-in pos2 val1)
+      (assoc-in pos1 ::nil)))
 
-(defn move [group-idx idx]
-  (let [game (:game @app-state)
-        self-pos [group-idx idx]
-        left-pos [group-idx (dec idx)]
-        right-pos [group-idx (inc idx)]
-        up-pos [(dec group-idx) idx]
-        down-pos [(inc group-idx) idx]
+(def self [identity identity])
+(def to-left [identity dec])
+(def to-right [identity inc])
+(def to-up [dec identity])
+(def to-down [inc identity])
+(defn ->pos-idxs [ff nn]
+  (mapv (fn [f n] (f n)) ff nn))
 
-        self (get-in game self-pos)
-        left (get-in game left-pos)
-        right (get-in game right-pos)
-        up (get-in game up-pos)
-        down (get-in game down-pos)
-
-        update-to (fn [state pos1 val2] (update-game state pos1 self self-pos val2))]
+(defn game-move [game moving-idxs]
+  (let [self (get-in game moving-idxs)
+        ->idxs #(->pos-idxs % moving-idxs)
+        update-to #(update-game game (->idxs %) self moving-idxs)
+        can? #(= ::nil (get-in game (->idxs %)))]
     (cond
-      (= ::nil left) (swap! app-state update-to left-pos left)
-      (= ::nil right) (swap! app-state update-to right-pos right)
-      (= ::nil up) (swap! app-state update-to up-pos up)
-      (= ::nil down) (swap! app-state update-to down-pos down)
-    )))
+      (can? to-left) (update-to to-left)
+      (can? to-right) (update-to to-right)
+      (can? to-up) (update-to to-up)
+      (can? to-down) (update-to to-down))))
 
-(defn hello-world []
+(defn redraw [moving-idxs]
+  (swap! app-state
+         update-in
+         [:game]
+         (fn [game] (game-move game moving-idxs))))
+
+(defn squares [game]
   [:div
-   (for [[group-idx group] (map-indexed vector (:game @app-state))]
+   (for [[group-idx group] (map-indexed vector game)]
      [:div.group
       (for [[idx x] (map-indexed vector group)]
-        [:div.square {:on-click #(move group-idx idx)} x])])])
+        [:div.square {:on-click #(redraw [group-idx idx])} x])])])
 
-(reagent/render-component [hello-world]
-                          (. js/document (getElementById "app")))
+(defn app []
+  [:div [squares (:game @app-state)]])
 
-(defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  (swap! app-state update-in [:__figwheel_counter] inc)
-  )
+(reagent/render-component [app] (. js/document (getElementById "app")))
+
+(defn on-js-reload [])
