@@ -3,7 +3,10 @@
 
 (enable-console-print!)
 
-(def app-state (atom {:game (mapv vec (partition 4 (shuffle (cons ::nil (range 1 16)))))}))
+(defn gen-game []
+  (mapv vec (partition 4 (shuffle (cons ::nil (range 1 16))))))
+
+(def app-state (atom {:game (gen-game)}))
 (defn l [x] (println x) x)
 
 (defn update-game [game pos2 val1 pos1]
@@ -30,21 +33,50 @@
       (can? to-up) (update-to to-up)
       (can? to-down) (update-to to-down))))
 
+;; prediction
+
+(defn forward-less [n coll] (count (filter #(< % n) coll)))
+
+(defn ->snake [game]
+  (remove #{::nil}
+          (concat (game 0)
+                  (reverse (game 1))
+                  (game 2)
+                  (reverse (game 3)))))
+
+(defn solvable? [game-as-snake]
+  (odd? (loop [[x & more] game-as-snake acc 0]
+          (if x (recur more (+ acc (forward-less x more)))
+              acc))))
+
+;; actions
+
 (defn redraw [moving-idxs]
   (swap! app-state
          update-in
          [:game]
          (fn [game] (game-move game moving-idxs))))
 
+(defn show-solvable []
+  (loop [game (gen-game)]
+    (if (-> game ->snake solvable?)
+      (swap! app-state assoc-in [:game] game)
+      (recur (gen-game)))))
+
+;; views
+
 (defn squares [game]
   [:div
+   [:h1 (if (-> game ->snake solvable?) "Solvable" "Not solvable")]
    (for [[group-idx group] (map-indexed vector game)]
-     [:div.group
+     ^{:key group-idx} [:div.group
       (for [[idx x] (map-indexed vector group)]
-        [:div.square {:on-click #(redraw [group-idx idx])} x])])])
+        ^{:key idx} [:div.square {:on-click #(redraw [group-idx idx])} x])])])
 
 (defn app []
-  [:div [squares (:game @app-state)]])
+  [:div
+   [squares (:game @app-state)]
+   [:button {:on-click show-solvable} "Show solvable"]])
 
 (reagent/render-component [app] (. js/document (getElementById "app")))
 
