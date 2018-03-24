@@ -51,8 +51,10 @@
               acc))))
 
 (defn solved? [game]
-  (let [game* (remove #{::nil} (flatten game))]
-    (= (sort game*) game*)))
+  (let [game* (flatten game)
+        nil-last? (= ::nil (last game*))
+        game* (remove #{::nil} game*)]
+    (and nil-last? (= (sort game*) game*))))
 
 ;; actions
 
